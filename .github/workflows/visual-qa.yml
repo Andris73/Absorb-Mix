@@ -27,6 +27,7 @@ jobs:
           "$HOME/flutter/bin/flutter" --version
       - name: Build real simulator app
         run: |
+          flutter config --no-enable-swift-package-manager
           flutter pub get
           flutter build ios --debug --simulator --no-codesign
       - name: Install isolated UI test harness
