@@ -5,6 +5,14 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 class NativeCompanionContract(unittest.TestCase):
+    def test_app_deployment_matches_advertised_ios_17_minimum(self):
+        import json, re
+        project = (ROOT / 'ios/Runner.xcodeproj/project.pbxproj').read_text()
+        targets = set(re.findall(r'IPHONEOS_DEPLOYMENT_TARGET = ([0-9.]+);', project))
+        self.assertEqual(targets, {'17.0'})
+        metadata = json.loads((ROOT / 'altstore/absorb-mix.json').read_text())
+        self.assertEqual(metadata['minOSVersion'], '17.0')
+
     def test_simulator_launch_is_debug_and_distribution_archive_is_release(self):
         import xml.etree.ElementTree as ET
         scheme = ET.parse(ROOT / 'ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme').getroot()
