@@ -5,6 +5,21 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 class NativeCompanionContract(unittest.TestCase):
+    def test_widget_versions_follow_generated_flutter_version(self):
+        import re
+        project = (ROOT / 'ios/Runner.xcodeproj/project.pbxproj').read_text()
+        for suffix in ('1', '2', '3'):
+            pattern = r'AB10080000000000000E000' + suffix + r' /\*.*?\*/ = \{(.*?)\n\t\t\};'
+            match = re.search(pattern, project, re.S)
+            assert match is not None
+            config = match.group(1)
+            self.assertIn('baseConfigurationReference = 9740EEB31CF90195004384FC', config)
+            self.assertIn('CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";', config)
+            self.assertIn('MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";', config)
+        workflow = (ROOT / '.github/workflows/build.yml').read_text()
+        self.assertIn("assert ext['CFBundleVersion']==info['CFBundleVersion']", workflow)
+        self.assertIn("assert ext['CFBundleShortVersionString']==info['CFBundleShortVersionString']", workflow)
+
     def test_app_deployment_matches_advertised_ios_17_minimum(self):
         import json, re
         project = (ROOT / 'ios/Runner.xcodeproj/project.pbxproj').read_text()

@@ -88,6 +88,8 @@ jobs:
           for extension in app.glob('PlugIns/*.appex'):
               ext=plistlib.loads((extension/'Info.plist').read_bytes())
               assert ext['CFBundleIdentifier'].startswith('com.andris73.absorbmix.')
+              assert ext['CFBundleVersion']==info['CFBundleVersion']
+              assert ext['CFBundleShortVersionString']==info['CFBundleShortVersionString']
           ipa=Path('absorb-mix.ipa')
           with zipfile.ZipFile(ipa,'w',zipfile.ZIP_DEFLATED) as archive:
               for file in app.rglob('*'):
