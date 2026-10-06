@@ -37,7 +37,10 @@ class CompanionController extends ChangeNotifier {
     return AudioSessionConfiguration(
       avAudioSessionCategory: AVAudioSessionCategory.playback,
       avAudioSessionMode: isIOS && enabled ? AVAudioSessionMode.defaultMode : AVAudioSessionMode.spokenAudio,
-      avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.longFormAudio,
+      // longFormAudio rejects mixWithOthers with OSStatus -50 on iOS.
+      avAudioSessionRouteSharingPolicy: isIOS && enabled
+          ? AVAudioSessionRouteSharingPolicy.defaultPolicy
+          : AVAudioSessionRouteSharingPolicy.longFormAudio,
       avAudioSessionCategoryOptions: isIOS
           ? (enabled ? AVAudioSessionCategoryOptions.mixWithOthers : AVAudioSessionCategoryOptions.none)
           : AVAudioSessionCategoryOptions.duckOthers,

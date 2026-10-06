@@ -99,7 +99,7 @@ public func configureAbsorbAudioSession(activate: Bool = false) throws {
     .bool(forKey: "companion_mix_enabled") ?? false
   let session = AVAudioSession.sharedInstance()
   try session.setCategory(.playback, mode: enabled ? .default : .spokenAudio,
-                          policy: .longFormAudio,
+                          policy: enabled ? .default : .longFormAudio,
                           options: enabled ? [.mixWithOthers] : [])
   if activate { try session.setActive(true) }
 }

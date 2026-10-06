@@ -34,6 +34,7 @@ class NativeCompanionContract(unittest.TestCase):
         policy = (ROOT / 'ios/AbsorbPlayerCore/Sources/AbsorbPlayerCore/Intents.swift').read_text()
         self.assertIn('companion_mix_enabled', policy)
         self.assertIn('.mixWithOthers', policy)
+        self.assertIn('policy: enabled ? .default : .longFormAudio', policy)
         self.assertNotIn('.duckOthers', policy)
         self.assertNotIn('.interruptSpokenAudioAndMixWithOthers', policy)
         self.assertIn('configureAbsorbAudioSession(activate: true)', policy)

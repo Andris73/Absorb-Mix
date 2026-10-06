@@ -31,7 +31,16 @@ final class AbsorbMixUITests: XCTestCase {
         let enabled = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "On • Spotify can keep playing with the book")).firstMatch
         XCTAssertTrue(enabled.waitForExistence(timeout: 15), app.debugDescription)
         capture("03-companion-on-top")
-        app.sliders.firstMatch.adjust(toNormalizedSliderPosition: 0.4)
+        let gain = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", "100%")).firstMatch
+        XCTAssertTrue(gain.waitForExistence(timeout: 10), app.debugDescription)
+        // Flutter adjustable semantics can be Other, not UISlider. Drag the real thumb.
+        let start = gain.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: start.screenPoint.y / app.frame.height))
+        start.press(forDuration: 0.1, thenDragTo: target)
+        let adjusted = app.descendants(matching: .any).matching(NSPredicate(format: "value ENDSWITH %@ AND value != %@", "%", "100%")).firstMatch
+        XCTAssertTrue(adjusted.waitForExistence(timeout: 10), app.debugDescription)
+        let savedGain = adjusted.value as? String
+        XCTAssertNotNil(savedGain)
         capture("04-book-gain-adjusted")
         app.swipeUp()
         let unavailable = app.staticTexts["Spotify gain • unavailable (not a live level)"]
@@ -42,5 +51,13 @@ final class AbsorbMixUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         capture("07-landscape")
         XCUIDevice.shared.orientation = .portrait
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(entry.waitForExistence(timeout: 30))
+        entry.tap()
+        XCTAssertTrue(enabled.waitForExistence(timeout: 15), app.debugDescription)
+        let restored = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", savedGain ?? "invalid")).firstMatch
+        XCTAssertTrue(restored.waitForExistence(timeout: 10), app.debugDescription)
+        capture("08-native-settings-restored-after-relaunch")
     }
 }

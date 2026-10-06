@@ -30,9 +30,11 @@ void main() {
     final on = CompanionController.audioConfiguration(isIOS: true, enabled: true);
     expect(on.avAudioSessionCategoryOptions, AVAudioSessionCategoryOptions.mixWithOthers);
     expect(on.avAudioSessionMode, AVAudioSessionMode.defaultMode);
+    expect(on.avAudioSessionRouteSharingPolicy, AVAudioSessionRouteSharingPolicy.defaultPolicy);
     final off = CompanionController.audioConfiguration(isIOS: true, enabled: false);
     expect(off.avAudioSessionCategoryOptions, AVAudioSessionCategoryOptions.none);
     expect(off.avAudioSessionMode, AVAudioSessionMode.spokenAudio);
+    expect(off.avAudioSessionRouteSharingPolicy, AVAudioSessionRouteSharingPolicy.longFormAudio);
     final android = CompanionController.audioConfiguration(isIOS: false, enabled: true);
     expect(android.androidAudioFocusGainType, AndroidAudioFocusGainType.gain);
     expect(android.androidAudioAttributes?.contentType, AndroidAudioContentType.speech);
