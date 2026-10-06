@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/companion_controller.dart';
 
@@ -17,6 +18,7 @@ class CompanionScreen extends StatefulWidget {
 
 class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingObserver {
   late final CompanionController controller;
+  late final SemanticsHandle _semantics;
   bool _ready = false;
   bool _busy = false;
   double? _draftGain;
@@ -24,6 +26,9 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
   @override
   void initState() {
     super.initState();
+    // Keep controls accessible if platform automation drops its semantics
+    // subscription while scrolling; release this lease with the screen.
+    _semantics = WidgetsBinding.instance.ensureSemantics();
     WidgetsBinding.instance.addObserver(this);
     controller = widget.controller ?? CompanionController.instance;
     _load();
@@ -43,6 +48,7 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _semantics.dispose();
     super.dispose();
   }
   Future<void> _change(Future<void> Function() action) async {
@@ -90,7 +96,7 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
           const Text('Audiobook • book-only gain', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           const Text('Use the existing player to choose and play your book. These controls change only the native audiobook player, including after switching books.'),
-          Slider(
+          Semantics(identifier: 'companion.bookGain', child: Slider(
             key: const Key('bookGain'),
             value: _draftGain ?? controller.bookGain,
             label: '${((_draftGain ?? controller.bookGain) * 100).round()}%',
@@ -100,7 +106,7 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
               await _change(() => controller.setBookGain(value));
               if (mounted) setState(() => _draftGain = null);
             } : null,
-          ),
+          )),
           SwitchListTile(key: const Key('bookMuted'), contentPadding: EdgeInsets.zero,
             title: const Text('Mute book only'), value: controller.bookMuted,
             onChanged: canEdit ? (value) => _change(() => controller.setBookMuted(value)) : null),

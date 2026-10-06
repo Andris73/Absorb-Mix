@@ -25,7 +25,7 @@ The release IPA is unsigned for SideStore/AltStore to re-sign on install. It is 
 
 Flutter is pinned to 3.44.6. Run `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings lib test`, and `flutter test test` before `flutter build ios --release --no-codesign` on macOS. The fork workflow produces an identity-validated IPA and exact-source manifest but does **not** automatically publish it. Publishing requires checking that artifact and preserving other central-source app entries.
 
-The release icon is an original turquoise/lavender waveform, not a Spotify co-brand. Spotify has not endorsed this application. Upstream license and credits are retained below.
+The release icon combines Spotify-inspired green broadcast curves with Absorb's turquoise/lavender waveform. It is an independent experimental fork, not an official Spotify integration or endorsed co-brand. Upstream license and credits are retained below.
 
 ---
 

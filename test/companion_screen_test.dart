@@ -17,6 +17,21 @@ void main() {
   });
   tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
 
+  testWidgets('companion keeps semantics active for native automation and releases it', (tester) async {
+    final baseline = tester.binding.debugOutstandingSemanticsHandles;
+    await tester.pumpWidget(MaterialApp(home: CompanionScreen(controller: CompanionController(supported: true))));
+    await tester.pumpAndSettle();
+    expect(tester.binding.debugOutstandingSemanticsHandles, baseline + 1);
+    await tester.ensureVisible(find.byKey(const Key('bookGain')));
+    expect(tester.getSemantics(find.byKey(const Key('bookGain'))).identifier, 'companion.bookGain');
+    await tester.scrollUntilVisible(find.text('Spotify gain • unavailable (not a live level)'), 200);
+    await tester.pumpAndSettle();
+    expect(tester.binding.debugOutstandingSemanticsHandles, baseline + 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    expect(tester.binding.debugOutstandingSemanticsHandles, baseline);
+  });
+
   testWidgets('opt-in and book mute are native-backed controls', (tester) async {
     final controller = CompanionController(supported: true);
     await tester.pumpWidget(MaterialApp(home: CompanionScreen(controller: controller)));
