@@ -96,7 +96,7 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
           const Text('Audiobook • book-only gain', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           const Text('Use the existing player to choose and play your book. These controls change only the native audiobook player, including after switching books.'),
-          Semantics(identifier: 'companion.bookGain', child: Slider(
+          MergeSemantics(key: const Key('bookGainSemantics'), child: Semantics(identifier: 'companion.bookGain', child: Slider(
             key: const Key('bookGain'),
             value: _draftGain ?? controller.bookGain,
             label: '${((_draftGain ?? controller.bookGain) * 100).round()}%',
@@ -106,7 +106,7 @@ class _CompanionScreenState extends State<CompanionScreen> with WidgetsBindingOb
               await _change(() => controller.setBookGain(value));
               if (mounted) setState(() => _draftGain = null);
             } : null,
-          )),
+          ))),
           SwitchListTile(key: const Key('bookMuted'), contentPadding: EdgeInsets.zero,
             title: const Text('Mute book only'), value: controller.bookMuted,
             onChanged: canEdit ? (value) => _change(() => controller.setBookMuted(value)) : null),

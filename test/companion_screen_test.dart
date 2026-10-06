@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:absorb/services/companion_controller.dart';
@@ -23,7 +24,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.binding.debugOutstandingSemanticsHandles, baseline + 1);
     await tester.ensureVisible(find.byKey(const Key('bookGain')));
-    expect(tester.getSemantics(find.byKey(const Key('bookGain'))).identifier, 'companion.bookGain');
+    final gainSemantics = tester.getSemantics(find.byKey(const Key('bookGainSemantics'))).getSemanticsData();
+    expect(gainSemantics.identifier, 'companion.bookGain');
+    expect(gainSemantics.value, '100%');
+    expect(gainSemantics.hasAction(SemanticsAction.increase), isTrue);
+    expect(gainSemantics.hasAction(SemanticsAction.decrease), isTrue);
     await tester.scrollUntilVisible(find.text('Spotify gain • unavailable (not a live level)'), 200);
     await tester.pumpAndSettle();
     expect(tester.binding.debugOutstandingSemanticsHandles, baseline + 1);
