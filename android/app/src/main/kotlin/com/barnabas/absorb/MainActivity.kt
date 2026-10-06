@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.content.Context
 import android.content.Intent

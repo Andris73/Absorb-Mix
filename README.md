@@ -1,4 +1,35 @@
-# Absorb
+# Absorb Mix
+
+An independent experimental fork of Absorb for Audiobookshelf + external music.
+
+## First phone-test release
+
+- **iOS only:** opt in to coexistence with Spotify playing in its own app.
+- Use Spotify's existing login and select music there; no Spotify password is collected.
+- Audiobook gain and mute belong to Absorb Mix. Spotify volume/transport stay external.
+- The system volume buttons affect the shared output. This is **not** an app-owned two-source renderer.
+- Sleep timers stop/fade the audiobook only; Spotify can continue.
+- Bluetooth/AirPlay, interruptions, background playback and native widget takeover require real-device testing.
+- Android coexistence is not claimed by this release.
+
+Separate install identity: `com.andris73.absorbmix`, group `group.com.andris73.absorbmix`, callback `absorbmix://oauth`. Audiobookshelf SSO users must allow that callback at their identity provider. Existing Absorb data is not automatically shared or migrated.
+
+### Install
+
+Use the **Absorb Mix** entry in the existing Andris73 AltStore source:
+`https://raw.githubusercontent.com/Andris73/altstore/master/apps.json`
+
+The release IPA is unsigned for SideStore/AltStore to re-sign on install. It is not an App Store/TestFlight release. Spotify access/login is independent from Audiobookshelf login. No Spotify partner integration or PCM access is implied.
+
+### Build and verify
+
+Flutter is pinned to 3.44.6. Run `flutter pub get`, `flutter analyze --no-fatal-infos --no-fatal-warnings lib test`, and `flutter test test` before `flutter build ios --release --no-codesign` on macOS. The fork workflow produces an identity-validated IPA and exact-source manifest but does **not** automatically publish it. Publishing requires checking that artifact and preserving other central-source app entries.
+
+The release icon is an original turquoise/lavender waveform, not a Spotify co-brand. Spotify has not endorsed this application. Upstream license and credits are retained below.
+
+---
+
+# Upstream Absorb
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/BarnabasApps)
 

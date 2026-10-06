@@ -23,7 +23,7 @@ const String _androidWidgetStatsName = 'StatsWidget';
 const String _iOSWidgetName = 'NowPlayingWidget';
 const String _iOSArtWidgetName = 'NowPlayingArtWidget';
 const String _iOSStatsWidgetName = 'StatsWidget';
-const String _appGroupId = 'group.com.barnabas.absorb';
+const String _appGroupId = 'group.com.andris73.absorbmix';
 const Duration _statsThrottle = Duration(minutes: 15);
 
 class HomeWidgetService {

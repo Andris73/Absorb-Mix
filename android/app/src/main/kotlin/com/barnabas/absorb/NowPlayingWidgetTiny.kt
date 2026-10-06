@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -77,7 +77,7 @@ class NowPlayingWidgetTiny : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_TOGGLE_PLAYBACK = "com.barnabas.absorb.ACTION_TOGGLE_PLAYBACK_TINY"
+        const val ACTION_TOGGLE_PLAYBACK = "com.andris73.absorbmix.ACTION_TOGGLE_PLAYBACK_TINY"
 
         // Portrait-height (dp) gates for the panel rows, measured across
         // launchers whose row heights differ a lot. A 1-row-tall widget reports

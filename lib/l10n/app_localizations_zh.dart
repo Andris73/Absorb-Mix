@@ -182,7 +182,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginWaitingForSso => '正在等待单点登录(SSO)...';
 
   @override
-  String get loginRedirectUri => '重定向 URI: audiobookshelf://oauth';
+  String get loginRedirectUri => '重定向 URI: absorbmix://oauth';
 
   @override
   String get loginOrSignInManually => '或手动登录';

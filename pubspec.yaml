@@ -1,7 +1,7 @@
 name: absorb
-description: An Audiobookshelf Client
+description: Experimental Audiobookshelf and external Spotify companion
 publish_to: 'none'
-version: 1.12.6+222
+version: 0.1.0+1
 
 environment:
   sdk: '>=3.10.0 <4.0.0'

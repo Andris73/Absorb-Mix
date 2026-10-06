@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -56,7 +56,7 @@ class NowPlayingWidgetCompact : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_TOGGLE_PLAYBACK = "com.barnabas.absorb.ACTION_TOGGLE_PLAYBACK_COMPACT"
+        const val ACTION_TOGGLE_PLAYBACK = "com.andris73.absorbmix.ACTION_TOGGLE_PLAYBACK_COMPACT"
 
         private fun roundBitmap(bitmap: Bitmap, radiusDp: Float, context: Context): Bitmap {
             val density = context.resources.displayMetrics.density

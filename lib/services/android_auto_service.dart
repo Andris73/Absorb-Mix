@@ -411,7 +411,7 @@ class AndroidAutoService {
 
   /// Content provider authority for serving local cover images to Android Auto.
   /// Must match the authority registered in AndroidManifest.xml.
-  static const _coverAuthority = 'com.barnabas.absorb.covers';
+  static const _coverAuthority = 'com.andris73.absorbmix.covers';
 
   // Per-item updatedAt for cover ?ts= cache busting on AA/CarPlay.
   static final Map<String, int> _itemUpdatedAt = {};

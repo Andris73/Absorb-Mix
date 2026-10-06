@@ -39,7 +39,7 @@ class OidcService {
   bool _lastWasUserCancel = false;
   bool get lastWasUserCancel => _lastWasUserCancel;
 
-  static const _redirectUri = 'audiobookshelf://oauth';
+  static const _redirectUri = 'absorbmix://oauth';
   static const _clientId = 'Audiobookshelf-App';
 
   /// Generate a cryptographically random string of [length] bytes, base64url-encoded.
@@ -148,13 +148,13 @@ class OidcService {
 
     // Open the OIDC provider in an in-app browser tab. On Android this is a
     // Chrome Custom Tab; on iOS, ASWebAuthenticationSession. Both intercept
-    // the audiobookshelf:// callback and return it to us. Unlike an external
+    // the absorbmix:// callback and return it to us. Unlike an external
     // browser, neither can be hijacked by PWAs or other apps registered for
     // the provider's domain.
     try {
       final resultUrl = await FlutterWebAuth2.authenticate(
         url: providerUrl,
-        callbackUrlScheme: 'audiobookshelf',
+        callbackUrlScheme: 'absorbmix',
       );
       debugPrint('[OIDC] Custom Tab returned: $resultUrl');
       return Uri.parse(resultUrl);

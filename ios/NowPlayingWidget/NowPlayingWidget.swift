@@ -5,13 +5,13 @@ import SwiftUI
 import AVFAudio
 import ImageIO
 
-private let appGroup = "group.com.barnabas.absorb"
+private let appGroup = "group.com.andris73.absorbmix"
 
 // Deep-link URL used only by the play button when no session is loaded, so
 // the app launches and can cold-resume the last-played item. Must use the
-// registered URL scheme (audiobookshelf://) and include ?homeWidget so the
+// registered URL scheme (absorbmix://) and include ?homeWidget so the
 // home_widget Flutter plugin intercepts the URL on launch.
-private let playPauseURL = URL(string: "audiobookshelf://widget/play_pause?homeWidget")!
+private let playPauseURL = URL(string: "absorbmix://widget/play_pause?homeWidget")!
 
 // Intents (AbsorbPlayPauseIntent / AbsorbSkipBackIntent /
 // AbsorbSkipForwardIntent) live in the AbsorbPlayerCore Swift package so

@@ -13,7 +13,7 @@ class WearAuthService {
   static final WearAuthService instance = WearAuthService._();
 
   static const MethodChannel _channel =
-      MethodChannel('com.barnabas.absorb/wear_auth');
+      MethodChannel('com.andris73.absorbmix/wear_auth');
 
   bool get _supported => !kIsWeb && Platform.isAndroid;
 

@@ -184,7 +184,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginWaitingForSso => 'Waiting for SSO...';
 
   @override
-  String get loginRedirectUri => 'Redirect URI: audiobookshelf://oauth';
+  String get loginRedirectUri => 'Redirect URI: absorbmix://oauth';
 
   @override
   String get loginOrSignInManually => 'or sign in manually';

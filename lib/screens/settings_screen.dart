@@ -1,3 +1,4 @@
+import 'companion_screen.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -1382,6 +1383,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(Icons.headphones),
+                  title: const Text('Spotify companion • experimental'),
+                  subtitle: const Text('External/manual music + book-only gain'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => openCompanionScreen(context),
+                ),
 
                 // ── Tips & Tricks ──
                 Padding(

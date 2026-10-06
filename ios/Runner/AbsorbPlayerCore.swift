@@ -24,9 +24,9 @@ final class AbsorbPlayerCore: NSObject, AbsorbPlayerCoreProtocol, @unchecked Sen
 
   static var logSink: ((String) -> Void)?
 
-  private static let appGroup = "group.com.barnabas.absorb"
+  private static let appGroup = "group.com.andris73.absorbmix"
 
-  private let queue = DispatchQueue(label: "com.barnabas.absorb.nativecore")
+  private let queue = DispatchQueue(label: "com.andris73.absorbmix.nativecore")
 
   // Bookkeeping for server push + Now Playing. The actual audio state lives in
   // AbsorbAudioEngine.shared; these just mirror what book we last targeted.
@@ -339,10 +339,8 @@ final class AbsorbPlayerCore: NSObject, AbsorbPlayerCoreProtocol, @unchecked Sen
   }
 
   private func activateAudioSession() {
-    let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.playback, mode: .spokenAudio, options: [])
-      try session.setActive(true)
+      try configureAbsorbAudioSession(activate: true)
     } catch {
       emit("[NativeCore] AVAudioSession activate failed: \(error.localizedDescription)")
     }

@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName

@@ -144,7 +144,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.barnabas.absorb
+        bundle_identifier: com.andris73.absorbmix
       groups:
         - github_credentials
         - discord_notifications
@@ -209,7 +209,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.barnabas.absorb
+        bundle_identifier: com.andris73.absorbmix
       groups:
         - discord_notifications
       flutter: stable
@@ -237,7 +237,7 @@ workflows:
         - absorb_keystore
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.barnabas.absorb
+        bundle_identifier: com.andris73.absorbmix
       groups:
         - github_credentials
         - discord_notifications

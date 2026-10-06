@@ -1,3 +1,5 @@
+import 'book_attenuation.dart';
+import 'companion_controller.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -1422,7 +1424,15 @@ class AudioPlayerService extends ChangeNotifier {
   }
   bool get isOfflineMode => _isOfflineMode;
   double get volume => _player?.volume ?? 1.0;
-  Future<void> setVolume(double v) async => _player?.setVolume(v);
+  final _attenuation = BookAttenuation();
+  Future<void> setSleepFade(double factor) async {
+    _attenuation.sleepFade = factor;
+    await _player?.setVolume(_attenuation.effective);
+  }
+  Future<void> setChimeAttenuation(double factor) async {
+    _attenuation.chime = factor;
+    await _player?.setVolume(_attenuation.effective);
+  }
 
   static const _eqChannelForDiag = MethodChannel('com.absorb.equalizer');
   static const _queueAdvancerChannel = MethodChannel('com.absorb.queue_advancer');
@@ -1674,7 +1684,7 @@ class AudioPlayerService extends ChangeNotifier {
   Future<void> _iosAutoAdvanceKick() async {
     final speed = _player?.speed ?? 1.0;
     try {
-      await (await AudioSession.instance).setActive(true);
+      await CompanionController.activateSession();
     } catch (e) {
       debugPrint('[QueueAdvance] setActive failed: $e');
     }
@@ -2164,26 +2174,7 @@ class AudioPlayerService extends ChangeNotifier {
   static Future<void> _configureAudioSession() async {
     final session = await AudioSession.instance;
 
-    await session.configure(AudioSessionConfiguration(
-      // iOS: playback category — no duckOthers so iOS properly recognises this
-      // app as the Now Playing app and shows lock screen / Control Center controls.
-      avAudioSessionCategory: AVAudioSessionCategory.playback,
-      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
-      avAudioSessionRouteSharingPolicy:
-          AVAudioSessionRouteSharingPolicy.longFormAudio,
-      avAudioSessionCategoryOptions: Platform.isIOS
-          ? AVAudioSessionCategoryOptions.none
-          : AVAudioSessionCategoryOptions.duckOthers,
-      // Android: speech content type enables OS voice-intelligibility
-      // processing so audiobooks play at normal listening levels. Matches the
-      // reference ABS Android client.
-      androidAudioAttributes: AndroidAudioAttributes(
-        contentType: AndroidAudioContentType.speech,
-        usage: AndroidAudioUsage.media,
-      ),
-      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-      androidWillPauseWhenDucked: true,
-    ));
+    await CompanionController.configureSession();
     // Don't activate the session here — defer to first playback.
     // Activating during init creates a stale MediaSession that Android
     // can garbage-collect after hours in background, leaving bluetooth /
@@ -2385,7 +2376,7 @@ class AudioPlayerService extends ChangeNotifier {
     // playing we don't need focus; the MediaSession refresh below doesn't
     // require it, and play()/startLocalPlayback reacquire focus themselves.
     if (service.isPlaying) {
-      try { (await AudioSession.instance).setActive(true); } catch (_) {}
+      try { await CompanionController.activateSession(); } catch (_) {}
     }
     // Re-push playback state so the system re-registers the MediaSession
     _handler?.refreshPlaybackState();
@@ -2847,7 +2838,7 @@ class AudioPlayerService extends ChangeNotifier {
 
       await _configureAudioSession();
       try {
-        final activated = await (await AudioSession.instance).setActive(true);
+        final activated = await CompanionController.activateSession();
         debugPrint('[Player] Pre-source setActive(true)=$activated (local)');
       } catch (e) {
         debugPrint('[Player] Pre-source setActive failed (local): $e');
@@ -2903,7 +2894,7 @@ class AudioPlayerService extends ChangeNotifier {
       debugPrint('[Player] Starting local playback at ${speed}x');
       _handler?.refreshPlaybackState();
       await Future.delayed(const Duration(milliseconds: 200));
-      try { (await AudioSession.instance).setActive(true); } catch (_) {}
+      try { await CompanionController.activateSession(); } catch (_) {}
       _player!.play();
       _scheduleAudioDiagnostics('local');
       notifyListeners();
@@ -2995,7 +2986,7 @@ class AudioPlayerService extends ChangeNotifier {
 
       await _configureAudioSession();
       try {
-        final activated = await (await AudioSession.instance).setActive(true);
+        final activated = await CompanionController.activateSession();
         debugPrint('[Player] Pre-source setActive(true)=$activated (cached-session)');
       } catch (e) {
         debugPrint('[Player] Pre-source setActive failed (cached-session): $e');
@@ -3023,7 +3014,7 @@ class AudioPlayerService extends ChangeNotifier {
       debugPrint('[Player] Starting cached session playback at ${speed}x');
       _handler?.refreshPlaybackState();
       await Future.delayed(const Duration(milliseconds: 200));
-      try { (await AudioSession.instance).setActive(true); } catch (_) {}
+      try { await CompanionController.activateSession(); } catch (_) {}
       _player!.play();
       _scheduleAudioDiagnostics('cached-session');
       notifyListeners();
@@ -3268,7 +3259,7 @@ class AudioPlayerService extends ChangeNotifier {
 
       await _configureAudioSession();
       try {
-        final activated = await (await AudioSession.instance).setActive(true);
+        final activated = await CompanionController.activateSession();
         debugPrint('[Player] Pre-source setActive(true)=$activated (stream)');
       } catch (e) {
         debugPrint('[Player] Pre-source setActive failed (stream): $e');
@@ -3297,7 +3288,7 @@ class AudioPlayerService extends ChangeNotifier {
       debugPrint('[Player] Starting stream playback at ${speed}x');
       _handler?.refreshPlaybackState();
       await Future.delayed(const Duration(milliseconds: 200));
-      try { (await AudioSession.instance).setActive(true); } catch (_) {}
+      try { await CompanionController.activateSession(); } catch (_) {}
       _player!.play();
       _scheduleAudioDiagnostics('stream');
       notifyListeners();
@@ -3394,7 +3385,7 @@ class AudioPlayerService extends ChangeNotifier {
               _pushMediaItem(itemId, title, author, coverUrl, totalDuration, chapter: initChapter);
               await EqualizerService().switchItem(itemId);
               debugPrint('[Player] Transcoded playback starting at ${speed}x');
-              try { (await AudioSession.instance).setActive(true); } catch (_) {}
+              try { await CompanionController.activateSession(); } catch (_) {}
               _player!.play();
               _scheduleAudioDiagnostics('transcoded-retry');
               notifyListeners();
@@ -3494,7 +3485,7 @@ class AudioPlayerService extends ChangeNotifier {
       _pushMediaItem(itemId, retryTitle, retryAuthor, retryCover, totalDuration, chapter: initChapter);
       await EqualizerService().switchItem(itemId);
       debugPrint('[Player] Transcoded playback starting at ${speed}x');
-      try { (await AudioSession.instance).setActive(true); } catch (_) {}
+      try { await CompanionController.activateSession(); } catch (_) {}
       _player!.play();
       _scheduleAudioDiagnostics('transcoded');
       notifyListeners();
@@ -3559,7 +3550,7 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   /// Content provider authority — must match CoverContentProvider and AndroidManifest.
-  static const _coverAuthority = 'com.barnabas.absorb.covers';
+  static const _coverAuthority = 'com.andris73.absorbmix.covers';
 
   void _pushMediaItem(String itemId, String title, String author,
       String? coverUrl, double totalDuration, {String? chapter, int? coverCacheBust}) {
@@ -4647,7 +4638,7 @@ class AudioPlayerService extends ChangeNotifier {
     _lastServerSync = DateTime.now();
     _lastAccrual = DateTime.now();
     // Re-activate audio session in case a prior stop released it.
-    try { (await AudioSession.instance).setActive(true); } catch (_) {}
+    try { await CompanionController.activateSession(); } catch (_) {}
     // If the player is idle (source was disposed), we need to fully re-initialize
     // playback instead of just calling play() on an empty player.
     if (_player?.processingState == ProcessingState.idle && _currentItemId != null && _api != null) {

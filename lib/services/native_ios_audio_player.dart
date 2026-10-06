@@ -12,7 +12,9 @@ class NativeIosAudioPlayer {
   static const _methodChannel = MethodChannel('com.absorb.audio_engine');
   static const _eventChannel = EventChannel('com.absorb.audio_engine.events');
 
-  NativeIosAudioPlayer() {
+  static NativeIosAudioPlayer? _instance;
+  factory NativeIosAudioPlayer() => _instance ??= NativeIosAudioPlayer._();
+  NativeIosAudioPlayer._() {
     _eventSub = _eventChannel.receiveBroadcastStream().listen(
       _onEvent,
       onError: (Object e) {
@@ -228,6 +230,8 @@ class NativeIosAudioPlayer {
   }
 
   Future<void> dispose() async {
+    if (_instance != this) return;
+    _instance = null;
     await _eventSub?.cancel();
     _eventSub = null;
     try {

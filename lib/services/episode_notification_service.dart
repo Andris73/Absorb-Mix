@@ -24,7 +24,7 @@ import 'package:provider/provider.dart';
 /// insertion and auto-download and must keep seeing "new" episodes when the
 /// app next opens.
 class EpisodeNotificationService {
-  static const _uniqueName = 'com.barnabas.absorb.episodeNotifCheck';
+  static const _uniqueName = 'com.andris73.absorbmix.episodeNotifCheck';
   static const channelId = 'new_episodes';
 
   /// Register/cancel the periodic job to match the setting. Called on app

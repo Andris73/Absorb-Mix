@@ -14,7 +14,7 @@ class WearPlayerService {
   static final WearPlayerService instance = WearPlayerService._();
 
   static const MethodChannel _channel =
-      MethodChannel('com.barnabas.absorb/wear_player');
+      MethodChannel('com.andris73.absorbmix/wear_player');
 
   bool get _supported => !kIsWeb && Platform.isAndroid;
 

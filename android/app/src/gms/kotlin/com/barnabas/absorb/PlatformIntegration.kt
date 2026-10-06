@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.app.Activity
 import io.flutter.embedding.engine.FlutterEngine
@@ -33,7 +33,7 @@ object PlatformIntegration {
 
         // Bridge ABS playback state to the watch so it can render Now
         // Playing without making its own API calls.
-        MethodChannel(messenger, "com.barnabas.absorb/wear_player")
+        MethodChannel(messenger, "com.andris73.absorbmix/wear_player")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "publish" -> {
@@ -59,7 +59,7 @@ object PlatformIntegration {
 
         // Bridge ABS auth state to the paired Wear OS app (AbsorbWear)
         // over the Google Play Services Wearable Data Layer.
-        MethodChannel(messenger, "com.barnabas.absorb/wear_auth")
+        MethodChannel(messenger, "com.andris73.absorbmix/wear_auth")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "publish" -> {

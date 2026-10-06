@@ -125,7 +125,6 @@ class SleepTimerService extends ChangeNotifier {
   // Wind-down warning & fade
   bool _warningSent = false;
   Duration _fadeThreshold = const Duration(seconds: 30);
-  double _fadeStartVolume = 1.0; // volume when fade begins
 
   // Reset on pause/play
   bool _wasPlaying = false; // tracks play state transitions
@@ -209,7 +208,7 @@ class SleepTimerService extends ChangeNotifier {
         _warningSent = false;
         if (_isFadingOut) {
           _isFadingOut = false;
-          _player.setVolume(_fadeStartVolume);
+          _player.setSleepFade(1);
         }
         debugPrint('[SleepTimer] Reset to ${_initialDuration.inMinutes}m on resume');
         onToast?.call('Sleep timer reset: ${_initialDuration.inMinutes}m');
@@ -234,7 +233,6 @@ class SleepTimerService extends ChangeNotifier {
         final fadeEnabled = await PlayerSettings.getSleepFadeOut();
         if (fadeEnabled && !_cast.isCasting) {
           _isFadingOut = true;
-          _fadeStartVolume = _player.volume;
           debugPrint('[SleepTimer] Warning: ${_timeRemaining.inSeconds}s remaining - starting fade (${_fadeThreshold.inSeconds}s)');
         } else {
           debugPrint('[SleepTimer] Warning: ${_timeRemaining.inSeconds}s remaining');
@@ -247,7 +245,7 @@ class SleepTimerService extends ChangeNotifier {
       // Gradually lower volume during the fade period
       if (_isFadingOut && _timeRemaining.inSeconds > 0 && !_cast.isCasting) {
         final fraction = _timeRemaining.inSeconds / _fadeThreshold.inSeconds;
-        _player.setVolume((_fadeStartVolume * fraction).clamp(0.0, 1.0));
+        _player.setSleepFade(fraction);
       }
 
       notifyListeners();
@@ -263,7 +261,7 @@ class SleepTimerService extends ChangeNotifier {
       _warningSent = false;
       if (_isFadingOut) {
         _isFadingOut = false;
-        _player.setVolume(_fadeStartVolume);
+        _player.setSleepFade(1);
       }
     }
     // Reschedule in case we jumped between slow/fast tick zones
@@ -392,7 +390,7 @@ class SleepTimerService extends ChangeNotifier {
     } else {
       _player.pause();
       // Restore volume so next playback starts at normal level
-      _player.setVolume(_fadeStartVolume);
+      _player.setSleepFade(1);
       // Auto-rewind so the user resumes from a few seconds back
       final rewindSeconds = await PlayerSettings.getEffectiveSleepRewindSeconds(_player.currentItemId);
       if (rewindSeconds > 0) {
@@ -422,7 +420,7 @@ class SleepTimerService extends ChangeNotifier {
     _autoStarted = false;
     // Restore volume if cancelled during fade-out
     if (wasFading) {
-      _player.setVolume(_fadeStartVolume);
+      _player.setSleepFade(1);
     }
     notifyListeners();
     debugPrint('[SleepTimer] Cancelled');
@@ -442,30 +440,28 @@ class SleepTimerService extends ChangeNotifier {
   /// audiobook, then restores it.
   ja.AudioPlayer? _chimePlayer;
   void _playChime() async {
+    ja.AudioPlayer? chime;
+    final player = AudioPlayerService();
     try {
       final vol = await PlayerSettings.getSleepChimeVolume();
       _chimePlayer?.dispose();
-      final chime = ja.AudioPlayer();
+      chime = ja.AudioPlayer(handleAudioSessionActivation: false, handleInterruptions: false);
       _chimePlayer = chime;
       await chime.setVolume(vol);
       await chime.setAsset('assets/audio/bell.mp3');
-
-      // Duck the main player so the chime cuts through
-      final player = AudioPlayerService();
-      final prevVol = player.volume;
-      final ducked = (prevVol * 0.15).clamp(0.0, 1.0);
-      await player.setVolume(ducked);
-      debugPrint('[SleepTimer] Chime: playing (vol=$vol, ducked main ${prevVol.toStringAsFixed(2)} -> ${ducked.toStringAsFixed(2)})');
-
-      chime.play();
-      chime.playerStateStream.where((s) => s.processingState == ja.ProcessingState.completed).first.then((_) {
-        // Restore main player volume after chime finishes
-        player.setVolume(prevVol);
-        chime.dispose();
-        if (_chimePlayer == chime) _chimePlayer = null;
-      });
+      if (_chimePlayer != chime) return;
+      await player.setChimeAttenuation(0.15);
+      debugPrint('[SleepTimer] Chime: playing (vol=$vol)');
+      await chime.play();
     } catch (e) {
       debugPrint('[SleepTimer] Chime error: $e');
+    } finally {
+      // Old completions must never restore over a newer warning chime.
+      if (chime != null && _chimePlayer == chime) {
+        await player.setChimeAttenuation(1);
+        _chimePlayer = null;
+      }
+      await chime?.dispose();
     }
   }
 

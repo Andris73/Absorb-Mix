@@ -1,0 +1,9 @@
+title = "Absorb Mix secret scanning"
+[extend]
+useDefault = true
+[[allowlists]]
+description = "CocoaPods-generated package checksum, not a credential"
+paths = ['''(^|/)ios/Podfile\.lock$''']
+regexes = ['''flutter_web_auth_2: [0-9a-f]{40}''']
+regexTarget = "match"
+condition = "AND"

@@ -4,7 +4,7 @@ import Foundation
 
 /// App group used by the host app, the widget extension, and these
 /// intents. Hardcoded so the package has no setup at the call site.
-public let absorbAppGroup = "group.com.barnabas.absorb"
+public let absorbAppGroup = "group.com.andris73.absorbmix"
 
 // MARK: - Helpers
 
@@ -92,11 +92,21 @@ public func absorbClaimOwnershipIfOwnerDead() {
 /// privilege from AudioPlaybackIntent expires before the Darwin
 /// notification reaches Flutter and the host app's setActive(true)
 /// silently fails.
-public func activateAbsorbAudioSession() {
+/// Shared, persisted policy used before Flutter boots and by widget intents.
+/// Mixing is opt-in; never duck or interrupt the other app's spoken audio.
+public func configureAbsorbAudioSession(activate: Bool = false) throws {
+  let enabled = UserDefaults(suiteName: absorbAppGroup)?
+    .bool(forKey: "companion_mix_enabled") ?? false
   let session = AVAudioSession.sharedInstance()
+  try session.setCategory(.playback, mode: enabled ? .default : .spokenAudio,
+                          policy: .longFormAudio,
+                          options: enabled ? [.mixWithOthers] : [])
+  if activate { try session.setActive(true) }
+}
+
+public func activateAbsorbAudioSession() {
   do {
-    try session.setCategory(.playback, mode: .spokenAudio, options: [])
-    try session.setActive(true)
+    try configureAbsorbAudioSession(activate: true)
     NSLog("[WidgetDebug] AVAudioSession activated in widget perform()")
   } catch {
     NSLog("[WidgetDebug] AVAudioSession activate error: %@", error.localizedDescription)
@@ -139,7 +149,7 @@ public struct AbsorbSkipBackIntent: AudioPlaybackIntent {
     let seconds = UserDefaults(suiteName: absorbAppGroup)?
       .integer(forKey: "widget_skip_back")
     core.skipBackward(seconds: (seconds ?? 0) > 0 ? seconds! : 10)
-    postAbsorbDarwinNotification("com.barnabas.absorb.widget.skipBack")
+    postAbsorbDarwinNotification("com.andris73.absorbmix.widget.skipBack")
     return .result()
   }
 }
@@ -167,7 +177,7 @@ public struct AbsorbPlayPauseIntent: AudioPlaybackIntent {
     core.log("[NativeCore]   predicted willPlay=\(willPlay)")
     activateAbsorbAudioSession()
     core.toggle()
-    postAbsorbDarwinNotification("com.barnabas.absorb.widget.playPause")
+    postAbsorbDarwinNotification("com.andris73.absorbmix.widget.playPause")
     return .result()
   }
 }
@@ -190,7 +200,7 @@ public struct AbsorbSkipForwardIntent: AudioPlaybackIntent {
     let seconds = UserDefaults(suiteName: absorbAppGroup)?
       .integer(forKey: "widget_skip_forward")
     core.skipForward(seconds: (seconds ?? 0) > 0 ? seconds! : 30)
-    postAbsorbDarwinNotification("com.barnabas.absorb.widget.skipForward")
+    postAbsorbDarwinNotification("com.andris73.absorbmix.widget.skipForward")
     return .result()
   }
 }

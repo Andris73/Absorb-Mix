@@ -1,3 +1,4 @@
+import 'companion_screen.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -370,6 +371,11 @@ class _LoginScreenState extends State<LoginScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextButton.icon(
+                    onPressed: () => openCompanionScreen(context),
+                    icon: const Icon(Icons.headphones),
+                    label: const Text('Explore Spotify companion • experimental'),
+                  ),
                   // ── Logo + Tagline ──
                   FadeTransition(
                     opacity: _fadeAnim,

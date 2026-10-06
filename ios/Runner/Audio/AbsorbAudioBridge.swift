@@ -1,3 +1,5 @@
+import AbsorbPlayerCore
+import AVFoundation
 import Flutter
 import Foundation
 
@@ -46,6 +48,36 @@ final class AbsorbAudioBridge: NSObject {
   private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let args = call.arguments as? [String: Any]
     switch call.method {
+    case "getCompanionSettings":
+      result(companionSettings())
+
+    case "setCompanionSettings":
+      guard let defaults = UserDefaults(suiteName: absorbAppGroup) else {
+        result(FlutterError(code: "companion_storage", message: "App-group storage unavailable", details: nil))
+        return
+      }
+      let previous = defaults.bool(forKey: "companion_mix_enabled")
+      if let enabled = args?["enabled"] as? Bool {
+        defaults.set(enabled, forKey: "companion_mix_enabled")
+        do {
+          // No activation when idle; changing settings must not start audio.
+          try configureAbsorbAudioSession(activate: AbsorbAudioEngine.shared.isPlaying)
+        } catch {
+          defaults.set(previous, forKey: "companion_mix_enabled")
+          try? configureAbsorbAudioSession(activate: AbsorbAudioEngine.shared.isPlaying)
+          result(FlutterError(code: "companion_session", message: error.localizedDescription, details: nil))
+          return
+        }
+      }
+      if let gain = args?["bookGain"] as? Double, gain.isFinite {
+        defaults.set(max(0, min(1, gain)), forKey: "companion_book_gain")
+      }
+      if let muted = args?["bookMuted"] as? Bool {
+        defaults.set(muted, forKey: "companion_book_muted")
+      }
+      defaults.synchronize() // widget/headless process reads the same policy
+      AbsorbAudioEngine.shared.refreshBookGain() { result(self.companionSettings()) }
+
     case "load":
       let trackList = parseTracks(args?["tracks"])
       let offsets = (args?["trackOffsets"] as? [NSNumber])?.map { $0.doubleValue } ?? []
@@ -153,6 +185,16 @@ final class AbsorbAudioBridge: NSObject {
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  private func companionSettings() -> [String: Any] {
+    let defaults = UserDefaults(suiteName: absorbAppGroup)
+    return [
+      "enabled": defaults?.bool(forKey: "companion_mix_enabled") ?? false,
+      "bookGain": (defaults?.object(forKey: "companion_book_gain") as? NSNumber)?.doubleValue ?? 1,
+      "bookMuted": defaults?.bool(forKey: "companion_book_muted") ?? false,
+      "mixConfigured": AVAudioSession.sharedInstance().categoryOptions.contains(.mixWithOthers),
+    ]
   }
 
   private func parseTracks(_ raw: Any?) -> [(url: URL, headers: [String: String])] {

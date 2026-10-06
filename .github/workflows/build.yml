@@ -1,98 +1,158 @@
-# Fork build: unsigned IPA on every push to main, published to the combined
-# AltStore source (Andris73/altstore). Mirrors the build.yml pattern used by
-# the other Andris73 apps, adapted for Flutter.
-
-name: Build and publish
-
+name: Build Absorb Mix
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-# Serialise publishes: parallel runs race on the central altstore repo and can
-# land versions out of order.
+    inputs:
+      publish:
+        description: Publish reviewed phone-test build to central AltStore source
+        type: boolean
+        default: false
+permissions:
+  contents: read
 concurrency:
-  group: publish-absorb
-  cancel-in-progress: false
-
+  group: absorb-mix-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/flutter
+          key: flutter-${{ runner.os }}-3.44.6
+      - name: Bootstrap pinned Flutter
+        run: |
+          if [ ! -x "$HOME/flutter/bin/flutter" ]; then
+            git clone --depth 1 --branch 3.44.6 https://github.com/flutter/flutter.git "$HOME/flutter"
+          fi
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" --version
+      - run: flutter pub get
+      - run: flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings lib test
+      - run: flutter test --no-pub test
+      - run: python3 -m unittest discover -s test -p '*_test.py' -v
   build:
-    name: Build unsigned IPA
+    needs: core-tests
     runs-on: macos-15
-    timeout-minutes: 60
-
+    timeout-minutes: 35
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      build: ${{ steps.package.outputs.build }}
+      size: ${{ steps.package.outputs.size }}
+      sha: ${{ steps.package.outputs.sha }}
+      date: ${{ steps.package.outputs.date }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - uses: subosito/flutter-action@v2
+          persist-credentials: false
+      - uses: maxim-lobanov/setup-xcode@v1
         with:
-          flutter-version: 3.44.6
-          channel: stable
-          cache: true
-
-      - name: Pub get
-        run: flutter pub get
-
-      # Scoped to lib/: the vendored packages/ ship broken example code.
-      # lib/ itself carries pre-existing upstream infos+warnings, so only
-      # errors gate.
-      - name: Analyze
-        run: flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings lib
-
-      - name: Read version
-        id: version
+          xcode-version: '26.0'
+      - uses: actions/cache@v4
+        with:
+          path: ~/flutter
+          key: flutter-${{ runner.os }}-3.44.6
+      - name: Bootstrap pinned Flutter
         run: |
-          RAW=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | tr -d '\r')
-          echo "version=${RAW%%+*}" >> "$GITHUB_OUTPUT"
-          echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Build iOS (unsigned)
-        env:
-          BUILD: ${{ steps.version.outputs.build }}
-        run: flutter build ios --release --no-codesign --build-number="$BUILD"
-
-      - name: Package IPA
+          if [ ! -x "$HOME/flutter/bin/flutter" ]; then
+            git clone --depth 1 --branch 3.44.6 https://github.com/flutter/flutter.git "$HOME/flutter"
+          fi
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" --version
+      - run: flutter pub get
+      - name: Build separate application
+        run: flutter build ios --release --no-codesign --build-number="$(git rev-list --count HEAD)"
+      - name: Package and verify phone-test IPA
+        id: package
         run: |
-          cd build/ios/iphoneos
-          mkdir Payload
-          cp -R Runner.app Payload/
-          zip -qry absorb.ipa Payload
-          ls -la absorb.ipa
-
+          python3 - <<'PY'
+          from pathlib import Path
+          import datetime,json,os,plistlib,subprocess,zipfile
+          app=Path('build/ios/iphoneos/Runner.app')
+          info=plistlib.loads((app/'Info.plist').read_bytes())
+          assert info['CFBundleIdentifier']=='com.andris73.absorbmix', info['CFBundleIdentifier']
+          assert info['CFBundleDisplayName']=='Absorb Mix'
+          assert info['CFBundleShortVersionString']=='0.1.0'
+          for extension in app.glob('PlugIns/*.appex'):
+              ext=plistlib.loads((extension/'Info.plist').read_bytes())
+              assert ext['CFBundleIdentifier'].startswith('com.andris73.absorbmix.')
+          ipa=Path('absorb-mix.ipa')
+          with zipfile.ZipFile(ipa,'w',zipfile.ZIP_DEFLATED) as archive:
+              for file in app.rglob('*'):
+                  if file.is_file(): archive.write(file,Path('Payload/Runner.app')/file.relative_to(app))
+          with zipfile.ZipFile(ipa) as archive:
+              assert archive.testzip() is None
+              assert archive.getinfo('Payload/Runner.app/Runner').external_attr>>16 & 0o111
+          metadata={'version':info['CFBundleShortVersionString'],'build':info['CFBundleVersion'],'size':ipa.stat().st_size,'sha':subprocess.check_output(['git','rev-parse','--short','HEAD'],text=True).strip(),'date':datetime.datetime.now(datetime.timezone.utc).date().isoformat()}
+          Path('build-info.json').write_text(json.dumps(metadata,indent=2)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              for key,value in metadata.items(): out.write(f'{key}={value}\n')
+          print(json.dumps(metadata,indent=2))
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: absorb-ipa
-          path: build/ios/iphoneos/absorb.ipa
-
-      - name: Publish to combined AltStore source
-        if: github.ref_name == 'main' && env.ALTSTORE_TOKEN != ''
+          name: absorb-mix-ipa
+          path: |
+            absorb-mix.ipa
+            build-info.json
+          if-no-files-found: error
+  publish:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: absorb-mix-ipa
+      - name: Publish isolated entry to central source
         env:
-          ALTSTORE_TOKEN: ${{ secrets.ALTSTORE_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
-          BUILD: ${{ steps.version.outputs.build }}
+          GH_TOKEN: ${{ secrets.ALTSTORE_TOKEN }}
+          APP_ID: absorb-mix
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD: ${{ needs.build.outputs.build }}
+          SIZE: ${{ needs.build.outputs.size }}
+          SHA_SHORT: ${{ needs.build.outputs.sha }}
+          DATE: ${{ needs.build.outputs.date }}
         run: |
-          git clone "https://x-access-token:${ALTSTORE_TOKEN}@github.com/Andris73/altstore.git" central
-          cp build/ios/iphoneos/absorb.ipa central/ipas/absorb.ipa
-          cp icon.png central/icons/absorb.png
-          cp altstore/absorb.json central/tools/apps/absorb.json
-          cd central
-          export APP_ID=absorb
-          export SIZE=$(stat -f%z ipas/absorb.ipa)
-          export SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          export DATE=$(date +%Y-%m-%d)
-          python3 tools/update_app.py
-          git config user.name "absorb-ci"
-          git config user.email "absorb-ci@users.noreply.github.com"
-          git add apps.json ipas/absorb.ipa icons/absorb.png tools/apps/absorb.json
-          git commit -m "Absorb ${VERSION} (build ${BUILD})"
-          pushed=
-          for i in 1 2 3; do
-            if git push; then pushed=1; break; fi
-            git pull --rebase || { git rebase --abort; break; }
-          done
-          if [ -z "$pushed" ]; then
-            echo "push failed after 3 attempts" >&2
+          if [ -z "$GH_TOKEN" ]; then
+            echo 'ALTSTORE_TOKEN is not configured; artifact retained, no publication performed.'
             exit 1
           fi
+          gh auth setup-git --hostname github.com
+          gh repo clone Andris73/altstore central -- --depth 1
+          git -C central config user.name 'Absorb Mix CI'
+          git -C central config user.email 'absorb-mix-ci@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git -C central fetch origin master
+            git -C central reset --hard origin/master
+            cp central/apps.json /tmp/absorb-mix-before.json
+            mkdir -p central/ipas central/icons central/tools/apps
+            cp absorb-mix.ipa central/ipas/absorb-mix.ipa
+            cp icon.png central/icons/absorb-mix.png
+            cp altstore/absorb-mix.json central/tools/apps/absorb-mix.json
+            (cd central && python3 tools/update_app.py)
+            python3 - <<'PY'
+          import json
+          before=json.load(open('/tmp/absorb-mix-before.json'))
+          after=json.load(open('central/apps.json'))
+          bundle='com.andris73.absorbmix'
+          assert before['identifier']==after['identifier']=='com.andris73.altstore'
+          old=[a for a in before['apps'] if a['bundleIdentifier']!=bundle]
+          kept=[a for a in after['apps'] if a['bundleIdentifier']!=bundle]
+          assert old==kept, 'Publishing modified another application'
+          assert len([a for a in after['apps'] if a['bundleIdentifier']==bundle])==1
+          PY
+            git -C central add apps.json ipas/absorb-mix.ipa icons/absorb-mix.png tools/apps/absorb-mix.json
+            git -C central commit -m "Absorb Mix $VERSION ($BUILD) $SHA_SHORT" || exit 1
+            if git -C central push origin HEAD:master; then exit 0; fi
+          done
+          echo 'Publication failed after three push attempts'
+          exit 1

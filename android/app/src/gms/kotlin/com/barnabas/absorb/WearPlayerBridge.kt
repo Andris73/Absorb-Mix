@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.content.Context
 import android.util.Log
@@ -16,7 +16,7 @@ import org.json.JSONObject
  * (AbsorbWear) so the watch can render "Now Playing" without making any
  * direct calls to the server.
  *
- * Keep the field set in sync with `com.barnabas.absorb.wear.player.PlayerState`
+ * Keep the field set in sync with `com.andris73.absorbmix.wear.player.PlayerState`
  * on the watch side. Bump the path version (`v1` → `v2`) when the shape
  * changes — DataItems are persistent and stale watches will still see the
  * last published payload until you republish.

@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -17,7 +17,7 @@ import java.net.URL
  *
  * Android Auto cannot load HTTP or file:// URIs directly — it requires
  * content:// URIs.  This provider maps:
- *   content://com.barnabas.absorb.covers/cover/<itemId>
+ *   content://com.andris73.absorbmix.covers/cover/<itemId>
  *
  * Lookup order:
  *   1. Locally downloaded cover (item's download directory)
@@ -27,7 +27,7 @@ import java.net.URL
 class CoverContentProvider : ContentProvider() {
 
     companion object {
-        const val AUTHORITY = "com.barnabas.absorb.covers"
+        const val AUTHORITY = "com.andris73.absorbmix.covers"
         private const val TAG = "CoverProvider"
 
         fun buildCoverUri(itemId: String): Uri {

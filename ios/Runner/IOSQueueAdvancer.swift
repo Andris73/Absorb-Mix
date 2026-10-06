@@ -1,3 +1,4 @@
+import AbsorbPlayerCore
 import AVFoundation
 import Flutter
 import Foundation
@@ -15,7 +16,7 @@ final class IOSQueueAdvancer: NSObject {
 
   static var logSink: ((String) -> Void)?
 
-  private let queue = DispatchQueue(label: "com.barnabas.absorb.queueadvancer")
+  private let queue = DispatchQueue(label: "com.andris73.absorbmix.queueadvancer")
 
   private weak var _justAudioPlayer: AVQueuePlayer?
   private var _justAudioPlayerId: String?
@@ -233,12 +234,8 @@ final class IOSQueueAdvancer: NSObject {
   }
 
   private func activateSession() {
-    let session = AVAudioSession.sharedInstance()
     do {
-      if session.category != .playback {
-        try session.setCategory(.playback, mode: .spokenAudio, policy: .longFormAudio)
-      }
-      try session.setActive(true)
+      try configureAbsorbAudioSession(activate: true)
     } catch {
       emit("[QueueAdvancer] session activate failed: \(error.localizedDescription)")
     }

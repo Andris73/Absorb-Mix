@@ -1,4 +1,4 @@
-package com.barnabas.absorb
+package com.andris73.absorbmix
 
 import android.content.Context
 import android.util.Log
@@ -19,7 +19,7 @@ import org.json.JSONObject
  * The companion Wear OS app reads the resulting `/absorb/auth/v1`
  * DataItem from a WearableListenerService. Keep the path constants and
  * field names in lock-step with that side (see AbsorbWear repo,
- * com.barnabas.absorb.wear.sync.WearPaths and auth.Credentials).
+ * com.andris73.absorbmix.wear.sync.WearPaths and auth.Credentials).
  */
 object WearAuthBridge {
     private const val TAG = "WearAuthBridge"

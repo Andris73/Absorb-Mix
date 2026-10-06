@@ -36,9 +36,8 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
     // Spotify) the moment Absorb opens, before the user presses play. The
     // playback paths (AbsorbAudioEngine / AbsorbPlayerCore / IOSQueueAdvancer)
     // activate the session themselves when audio actually starts.
-    let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.playback, mode: .spokenAudio)
+      try configureAbsorbAudioSession()
     } catch {
       print("[AppDelegate] Audio session setup failed: \(error)")
     }
@@ -224,10 +223,10 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
     let observer = Unmanaged.passUnretained(self).toOpaque()
 
     let names = [
-      "com.barnabas.absorb.widget.playPause",
-      "com.barnabas.absorb.widget.skipBack",
-      "com.barnabas.absorb.widget.skipForward",
-      "com.barnabas.absorb.host.takeover",
+      "com.andris73.absorbmix.widget.playPause",
+      "com.andris73.absorbmix.widget.skipBack",
+      "com.andris73.absorbmix.widget.skipForward",
+      "com.andris73.absorbmix.host.takeover",
     ]
     for name in names {
       CFNotificationCenterAddObserver(
@@ -242,7 +241,7 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
           // stop this process's engine so two streams can't overlap (#285).
           // Ownership is arbitrated by pid: the owner reads its own pid back
           // and ignores its own broadcast.
-          if rawName == "com.barnabas.absorb.host.takeover" {
+          if rawName == "com.andris73.absorbmix.host.takeover" {
             DispatchQueue.main.async {
               if absorbAudioOwnerPid() == Int(getpid()) { return }
               if UIApplication.shared.applicationState == .active { return }
@@ -254,9 +253,9 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
 
           let action: String
           switch rawName {
-          case "com.barnabas.absorb.widget.playPause":   action = "playPause"
-          case "com.barnabas.absorb.widget.skipBack":    action = "skipBack"
-          case "com.barnabas.absorb.widget.skipForward": action = "skipForward"
+          case "com.andris73.absorbmix.widget.playPause":   action = "playPause"
+          case "com.andris73.absorbmix.widget.skipBack":    action = "skipBack"
+          case "com.andris73.absorbmix.widget.skipForward": action = "skipForward"
           default: return
           }
           // Every live process receives this broadcast, so exactly one may
@@ -278,7 +277,7 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
           // again here from the host app's process is the belt-and-suspenders
           // guarantee that AVAudioSession is hot when player.play() runs.
           do {
-            try AVAudioSession.sharedInstance().setActive(true)
+            try configureAbsorbAudioSession(activate: true)
           } catch {
             NSLog("[WidgetDebug] AppDelegate setActive failed: %@", error.localizedDescription)
           }
@@ -313,7 +312,7 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
         }
       }
     }
-    postAbsorbDarwinNotification("com.barnabas.absorb.host.takeover")
+    postAbsorbDarwinNotification("com.andris73.absorbmix.host.takeover")
   }
 
   private func registerPlatformChannels() {
@@ -444,7 +443,7 @@ let flutterEngine = FlutterEngine(name: "SharedEngine", project: nil, allowHeadl
     widgetChannel.setMethodCallHandler { (call, result) in
       switch call.method {
       case "getGroupContainerPath":
-        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.barnabas.absorb") {
+        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andris73.absorbmix") {
           NSLog("[WidgetDebug] getGroupContainerPath resolved: %@", url.path)
           result(url.path)
         } else {
@@ -682,7 +681,7 @@ private final class VolumeKeyWatcher {
   func start() {
     guard observation == nil else { return }
     let session = AVAudioSession.sharedInstance()
-    try? session.setActive(true)
+    try? configureAbsorbAudioSession(activate: true)
 
     let vv = MPVolumeView(frame: CGRect(x: -3000, y: -3000, width: 1, height: 1))
     vv.clipsToBounds = true

@@ -1,3 +1,4 @@
+import AbsorbPlayerCore
 import AVFoundation
 import Foundation
 import UIKit
@@ -13,7 +14,7 @@ final class AbsorbAudioEngine: NSObject {
 
   weak var delegate: AbsorbAudioEngineDelegate?
 
-  private let queue = DispatchQueue(label: "com.barnabas.absorb.audioengine")
+  private let queue = DispatchQueue(label: "com.andris73.absorbmix.audioengine")
 
   private let player: AVPlayer = {
     let p = AVPlayer()
@@ -96,9 +97,9 @@ final class AbsorbAudioEngine: NSObject {
       self.trackOffsets = Self.normalizeOffsets(trackOffsets, trackCount: tracks.count, totalDurationS: totalDurationS)
       self.totalDurationS = totalDurationS
       self.speed = speed
-      self.volume = volume
+      // Source changes must not reset the live attenuation or user's gain.
       self.eqEnabled = eqEnabled
-      self.player.volume = volume
+      self.applyComposedVolume()
 
       let targetIndex = self.trackIndexFor(globalSeconds: startPositionS)
       self.trackIndex = targetIndex
@@ -185,8 +186,24 @@ final class AbsorbAudioEngine: NSObject {
   func setVolume(_ newVolume: Float) {
     queue.async { [weak self] in
       guard let self = self else { return }
-      self.volume = newVolume
-      self.player.volume = newVolume
+      self.volume = newVolume.isFinite ? max(0, min(1, newVolume)) : 1
+      self.applyComposedVolume()
+    }
+  }
+
+  /// One composition point. Transient fades/chimes cannot overwrite user gain.
+  private func applyComposedVolume() {
+    let defaults = UserDefaults(suiteName: absorbAppGroup)
+    let raw = (defaults?.object(forKey: "companion_book_gain") as? NSNumber)?.floatValue ?? 1
+    let gain = raw.isFinite ? max(0, min(1, raw)) : 1
+    let muted = defaults?.bool(forKey: "companion_book_muted") ?? false
+    player.volume = muted ? 0 : gain * volume
+  }
+
+  func refreshBookGain(completion: @escaping () -> Void = {}) {
+    queue.async { [weak self] in
+      self?.applyComposedVolume()
+      DispatchQueue.main.async(execute: completion)
     }
   }
 
@@ -582,12 +599,8 @@ final class AbsorbAudioEngine: NSObject {
   // MARK: - Audio session
 
   private func activateSession() {
-    let session = AVAudioSession.sharedInstance()
     do {
-      if session.category != .playback {
-        try session.setCategory(.playback, mode: .spokenAudio, policy: .longFormAudio)
-      }
-      try session.setActive(true)
+      try configureAbsorbAudioSession(activate: true)
     } catch {
       emit("[AudioEngine] session activate failed: \(error.localizedDescription)")
     }

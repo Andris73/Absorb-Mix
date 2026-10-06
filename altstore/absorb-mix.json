@@ -1,0 +1,10 @@
+{
+  "name": "Absorb Mix",
+  "bundleIdentifier": "com.andris73.absorbmix",
+  "developerName": "Andris73",
+  "subtitle": "Experimental audiobook + external music companion",
+  "localizedDescription": "An independent experimental Absorb fork for Audiobookshelf with opt-in iOS audio coexistence. Spotify plays in its own app using its existing login; Absorb Mix controls audiobook volume only. Spotify volume and transport are external/manual, and sleep timers stop or fade the audiobook only. This is not an app-owned Spotify mixer, and physical-device coexistence remains experimental. No affiliation with or endorsement by Spotify.",
+  "iconURL": "https://raw.githubusercontent.com/Andris73/altstore/master/icons/absorb-mix.png",
+  "downloadURL": "https://github.com/Andris73/altstore/raw/master/ipas/absorb-mix.ipa",
+  "minOSVersion": "15.0"
+}

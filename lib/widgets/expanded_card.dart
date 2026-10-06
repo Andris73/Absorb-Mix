@@ -1,3 +1,4 @@
+import '../screens/companion_screen.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -976,6 +977,16 @@ class _ExpandedCardState extends State<ExpandedCard> {
                       ],
                     );
                   }),
+                ),
+                Positioned(
+                  top: 8, right: 12,
+                  child: SafeArea(
+                    child: IconButton.filledTonal(
+                      tooltip: 'Spotify companion • experimental',
+                      icon: const Icon(Icons.headphones),
+                      onPressed: () => openCompanionScreen(context),
+                    ),
+                  ),
                 ),
               ],
             ),
