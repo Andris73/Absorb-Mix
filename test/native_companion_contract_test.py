@@ -5,6 +5,15 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 class NativeCompanionContract(unittest.TestCase):
+    def test_simulator_launch_is_debug_and_distribution_archive_is_release(self):
+        import xml.etree.ElementTree as ET
+        scheme = ET.parse(ROOT / 'ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme').getroot()
+        launch = scheme.find('LaunchAction')
+        archive = scheme.find('ArchiveAction')
+        assert launch is not None and archive is not None
+        self.assertEqual(launch.get('buildConfiguration'), 'Debug')
+        self.assertEqual(archive.get('buildConfiguration'), 'Release')
+
     def test_all_native_activation_paths_use_persisted_policy(self):
         paths = ['ios/Runner/AppDelegate.swift', 'ios/Runner/AbsorbPlayerCore.swift',
                  'ios/Runner/IOSQueueAdvancer.swift', 'ios/Runner/Audio/AbsorbAudioEngine.swift']
